@@ -1,16 +1,4 @@
-<?php require 'inc/connexion.php';
-
-   // pour pouvoir trier les infos 
-   $order = '';
-   if(isset($_GET['order']) && isset($_GET['column'])){
-
-      if($_GET['column'] == 'competence'){$order = ' ORDER BY competence';}
-          elseif($_GET['column'] == 'niveau'){$order = ' ORDER BY niveau';}
-          elseif($_GET['column'] == 'categorie'){$order = ' ORDER BY categorie';}
-      if($_GET['order'] == 'asc'){$order.= ' ASC';}
-          elseif($_GET['order'] == 'desc'){$order.= ' DESC';}
-  }
-?>
+﻿<?php require 'inc/connexion.php'; ?>
 
 <!DOCTYPE html>
 <html lang="fr">
@@ -70,7 +58,7 @@
             <a class="nav-link js-scroll-trigger" href="#experience">Expériences</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="#education">Fomations</a>
+            <a class="nav-link js-scroll-trigger" href="#education">Formations</a>
           </li>
           <li class="nav-item">
             <a class="nav-link js-scroll-trigger" href="#interests">Loisirs</a>
@@ -91,6 +79,7 @@
           </h1>
           <div class="subheading mb-5">PARIS · Île-de-France· <?php echo $ligne_utilisateur['portable']; ?> · <?php echo $ligne_utilisateur['mail']; ?>
           </div>
+          <h2>Développeur / intégrateur Web</h2>
           <p class="mb-5"><?php echo $ligne_utilisateur['description']; ?></p>
           <ul class="list-inline list-social-icons mb-0">
             <li class="list-inline-item">

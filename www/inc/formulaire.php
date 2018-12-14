@@ -1,173 +1,115 @@
 <?php
-/*
-	********************************************************************************************
-	CONFIGURATION
-	********************************************************************************************
-*/
-// destinataire est votre adresse mail. Pour envoyer à plusieurs à la fois, séparez-les par une virgule
-$destinataire = 'contact@mtbenkherouf.com';
 
-// copie ? (envoie une copie au visiteur)
-$copie = 'oui';
+// on récupère la classe Contact
+require('Contact.class.php');
 
-// Action du formulaire (si votre page a des paramètres dans l'URL)
-// si cette page est index.php?page=contact alors mettez index.php?page=contact
-// sinon, laissez vide
-$form_action = '';
+// on vérifie l'envoi du formulaire
+if (!empty($_POST)) {
+    // avec extract() on accède directement aux champs par leurs names en variable
+    //var_dump($_POST);
+    extract($_POST);
 
-// Messages de confirmation du mail
-$message_envoye = "Votre message a été envoyé avec succés !";
-$message_non_envoye = "L'envoi de votre message a échoué, veuillez réessayer SVP.";
+    // on valide les données 
+        // 1- champs renseignés et email valide
+        /*  /!\ Effectuer toutes les validations de formulaire ici => strlen($name) > 5 || strlen($name) < 100 ....*/
 
-// Message d'erreur du formulaire
-$message_formulaire_invalide = "Vérifiez que tous les champs soient bien remplis et que l'email soit sans erreur.";
+     $valid = (empty($nom) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || empty($sujet) || empty($message)) ? false : true;
+        // 2- validation des champs avec un comment d'erreur si besoin
 
-/*
-	********************************************************************************************
-	FIN DE LA CONFIGURATION
-	********************************************************************************************
-*/
+    $erreurname = (empty($nom)) ? 'Indiquez votre nom.' : null;
+    $erreuremail = (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) ? 'Entrez un mail valide, merci.' : null;
+    $erreursubject = (empty($sujet)) ? 'Indiquez l\'objet de votre mail.' : null;
+    $erreurcomment = (empty($message)) ? 'Ecrivez votre message.' : null;
 
-/*
- * cette fonction sert à nettoyer et enregistrer un texte
- */
-function Rec($text)
-{
-	$text = htmlspecialchars(trim($text), ENT_QUOTES);
-	if (1 === get_magic_quotes_gpc())
-	{
-		$text = stripslashes($text);
-	}
+    // si le formulaire est validé
 
-	$text = nl2br($text);
-	return $text;
-};
+    if($valid) {
+        // on instancie un objet de la classe Contact
+        $contact = new Contact;
 
-/*
- * Cette fonction sert à vérifier la syntaxe d'un email
- */
-function IsEmail($email)
-{
-	$value = preg_match('/^(?:[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+\.)*[\w\!\#\$\%\&\'\*\+\-\/\=\?\^\`\{\|\}\~]+@(?:(?:(?:[a-zA-Z0-9_](?:[a-zA-Z0-9_\-](?!\.)){0,61}[a-zA-Z0-9_-]?\.)+[a-zA-Z0-9_](?:[a-zA-Z0-9_\-](?!$)){0,61}[a-zA-Z0-9_]?)|(?:\[(?:(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d{1,2}|2[0-4]\d|25[0-5])\]))$/', $email);
-	return (($value === 0) || ($value === false)) ? false : true;
+        // on réalise l'insertion en BDD avec la méthode insertContact()
+        $contact->insertContact($nom, $email, $sujet, $message);
+
+        // on appelle la méthode sendEmail()
+        $contact->sendEmail($nom, $email, $sujet, $message); // ne fonctionne pas sur localhost sans un paramétrage spécial
+
+        // on efface les valeurs du formulaire (évite un envoi multiple)
+        unset($nom);
+        unset($email);
+        unset($sujet);
+        unset($message);
+        unset($contact);
+
+        // on créé une variable d'affichage de succès de l'envoi du formulaire
+        $success = 'Votre message a bien été envoyé ! Il sera traité dans les plus brefs délais.';
+     }
 }
+?>
 
-// formulaire envoyé, on récupère tous les champs.
-$nom     = (isset($_POST['nom']))     ? Rec($_POST['nom'])     : '';
-$email   = (isset($_POST['email']))   ? Rec($_POST['email'])   : '';
-$objet   = (isset($_POST['objet']))   ? Rec($_POST['objet'])   : '';
-$message = (isset($_POST['message'])) ? Rec($_POST['message']) : '';
+<!DOCTYPE html>
+    <html lang="fr">
+        <head>
+            <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+            <!--responsive viewport meta tag-->
+            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+            <title>Formulaire de contact</title>
+            <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+        
+            <!-- Bootstrap -->
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+            <link rel="stylesheet" href="css/styleform.css"/>
+        </head>
+    
+    <body>
+        <div id="content" class="container">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Pour me contacter</h3>
 
-$name = $ligne_utilisateur['nom'];
-$prenom = $ligne_utilisateur['prenom'];
-$email2 = $ligne_utilisateur['email'];
-$portable = $ligne_utilisateur['portable'];
+                    <!-- BONUS EMAIL -->
+                        <?php if (isset($success)): ?>
+                            <div class="alert alert-success" role="alert"><?= $success; ?></div>      
+                        <?php endif ?>
+                    <!-- FIN BONUS EMAIL -->
 
+                    <form action="formulaire.php" method="POST">
+                        <div class="form-group">
+                            <label for="nom">Nom :</label>
+                            <span class="error"><?php if (isset($erreurname)) echo $erreurname; ?></span>
+                            <input class="form-control" type="text" name="nom" value="<?php if (isset($nom)) echo $nom; ?>">
+                        </div>
 
-// On va vérifier les variables et l'email ...
-$email = (IsEmail($email)) ? $email : ''; // soit l'email est vide si erroné, soit il vaut l'email entré
-$err_formulaire = false; // sert pour remplir le formulaire en cas d'erreur si besoin
+                        <div class="form-group">
+                            <label for="email">Email :</label>
+                            <span class="error"><?php if (isset($erreuremail)) echo $erreuremail; ?></span>
+                            <input class="form-control" type="text" name="email" value="<?php if (isset($email)) echo $email; ?>">
+                        </div>
 
-if (isset($_POST['envoi']))
-{
-	if (($nom != '') && ($email != '') && ($objet != '') && ($message != ''))
-	{
-		// les variables sont remplies, on génère puis envoie le mail
-		$headers  = 'From:'.$nom.' <'.$email.'>' . "\r\n";
-		$headers .= 'Reply-To: '.$email. "\r\n" ;
-		$headers .= 'MIME-version: 1.0\r\n';
-		$headers .= 'X-Mailer:PHP/'.phpversion();
-		$headers .= 'Content-Type: text/html; charset=\"UTF-8'."\n"; // permet d'avoir les accents et du html dans le mail 
-		$headers .= 'Content-Transfer-Encoding: 8bit';
+                        <div class="form-group">
+                            <label for="sujet">Sujet :</label>
+                            <span class="error"><?php if (isset($erreursubject)) echo $erreursubject; ?></span>
+                            <input class="form-control" type="text" name="sujet" value="<?php if (isset($sujet)) echo $sujet; ?>">
+                        </div>
 
-		// envoyer une copie au visiteur ?
-		if ($copie == 'oui')
-		{
-			$cible = $destinataire.';'.$email;
-		}
-		else
-		{
-			$cible = $destinataire;
-		};
+                        <div class="form-group">
+                            <label for="message">Message :</label>
+                            <span class="error"><?php if (isset($erreurcomment)) echo $erreurcomment; ?></span>
+                            <textarea class="form-control" name="message" cols="30" rows="10"><?php if (isset($message)) echo $message; ?></textarea>
+                        </div>
+                        <input type="submit" class="submit btn btn-block btn-outline-info" value="Envoyer" />
+                    </form>
+                </div>
+            </div>
+            <hr>
+        </div><!-- .container -->
 
-		// Remplacement de certains caractères spéciaux
-		// $message = str_replace("&#039;","'",$message);
-		// $message = str_replace("&#8217;","'",$message);
-		// $message = str_replace("&quot;",'"',$message);
-		// $message = str_replace('&lt;br&gt;','',$message);
-		// $message = str_replace('&lt;br /&gt;','',$message);
-		// $message = str_replace("&lt;","&lt;",$message);
-		// $message = str_replace("&gt;","&gt;",$message);
-		// $message = str_replace("&amp;","&",$message);
-
-		// Envoi du mail
-		$num_emails = 0;
-		$tmp = explode(';', $cible);
-		foreach($tmp as $email_destinataire)
-		{
-			if (mail($email_destinataire, $objet, $message, $headers))
-				$num_emails++;
-		}
-
-		if ((($copie == 'oui') && ($num_emails == 2)) || (($copie == 'non') && ($num_emails == 1)))
-		{
-			echo '<p class="text-success">'.$message_envoye.'</p>';
-		}
-		else
-		{
-			echo '<p class="text-warning">'.$message_non_envoye.'</p>';
-		};
-	}
-	else
-	{
-		// une des 3 variables (ou plus) est vide ...
-		echo '<p>'.$message_formulaire_invalide.'</p>';
-		$err_formulaire = true;
-	};
-}; // fin du if (!isset($_POST['envoi']))
-
-if (($err_formulaire) || (!isset($_POST['envoi'])))
-{
-	// afficher le formulaire
-	echo '
-      <form id="contact" method="post" action="'.$form_action.'">
-        <div class="row">
-          <div class="col-sm-6 col-xs-12">
-            <div class="form-group">
-            <label for="nom">Nom</label>
-            <input type="text" id="nom" class="form-control" name="nom" value="'.stripslashes($nom).'" tabindex="1" />
-            </div><!--/.form-group-->
-          </div><!--/.col-->
-          <div class="col-sm-6 col-xs-12">
-            <div class="form-group">
-            <label for="email">Email</label>
-            <input type="text" id="email" class="form-control" name="email" value="'.stripslashes($email).'" tabindex="2" />
-            </div><!--/.form-group-->
-          </div><!--/.col-->
-        </div><!--/.row-->
-        <div class="row">
-          <div class="col-sm-12">
-            <div class="form-group">
-            <label for="objet">Objet</label>
-            <input type="text" id="objet" class="form-control" name="objet" value="'.stripslashes($objet).'" tabindex="3" />
-            </div><!--/.form-group-->
-          </div><!--/.col-->
-        </div><!--/.row-->
-        <div class="row">
-          <div class="col-sm-12">
-            <div class="form-group">
-            <label for="message">Message</label>
-            <textarea id="message" class="form-control" name="message" tabindex="4" cols="30" rows="8">'.stripslashes($message).'</textarea>
-            </div><!--/.form-group-->
-          </div><!--/.col-->
-        </div><!--/.row-->
-        <div class="row">
-          <div class="col-sm-12">
-						<div class="single-contact-btn">
-            <input type="submit" name="envoi" class="btn btn-success float-md-right" value="Envoyer" />
-            </div><!--/.single-single-contact-btn-->
-          </div><!--/.col-->
-        </div><!--/.row-->
-      </form><!--/form-->';
-};
-
+        <!-- JS for Bootstrap -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+    </body>
+</html>

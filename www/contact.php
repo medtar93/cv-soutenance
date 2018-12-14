@@ -62,7 +62,7 @@
       <section class="resume-section p-3 p-lg-5 d-flex flex-column" id="contact">
         <div class="my-auto">
         <h2 class="mb-5">contact</h2>
-        <?php include 'inc/formulaire.php'; ?>
+        <?php include 'formulaire.php'; ?>
         
         </div>
       </section>
